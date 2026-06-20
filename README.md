@@ -2,7 +2,7 @@
 
 **Versão:** 0.1.0  
 **Data:** 2026  
-**Autor:** BugsAppetit
+**Autor:** BugsAppettit
 **Status:** Funcional
 
 ---
