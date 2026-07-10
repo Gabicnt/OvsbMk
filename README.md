@@ -1,80 +1,104 @@
-# OvsbMkM
+<p align="center">
+  <img src="https://img.shields.io/badge/arch-x86__64-blue?style=for-the-badge&logo=intel">
+  <img src="https://img.shields.io/badge/version-0.2.0-green?style=for-the-badge">
+  <img src="https://img.shields.io/badge/license-MIT-orange?style=for-the-badge">
+  <img src="https://img.shields.io/badge/status-active-success?style=for-the-badge">
+</p>
 
-Status: Protótipo de kernel 64-bit em desenvolvimento. As fases 1 a 3 estão documentadas e a base de execução de binários Mach-O já foi integrada.
+<h1 align="center">⚙️ OvsbMkM</h1>
 
-## Visão geral atual
-- Fase 1: Terminal VGA interativo, teclado PS/2, boot GRUB + Multiboot2.
-- Fase 2: Binários macOS embutidos (`bash`, `ls`) e loader Mach-O básico.
-- Fase 3: Camada de syscalls XNU parcial para suporte a execuções de usuários.
+<p align="center"><strong>Kernel hibrido 64-bit inspirado no XNU (Mach + BSD)</strong></p>
 
-## Build & Run
+<p align="center">
+  <a href="#componentes">Componentes</a> •
+  <a href="#build">Build</a> •
+  <a href="#estrutura">Estrutura</a> •
+  <a href="#roadmap">Roadmap</a>
+</p>
 
-```bash
-make clean && make
-make run    # boots in QEMU
-```
+---
 
-## Principais arquivos do estado atual
-- `src/kernel/kernel.c` — bootstrap, inicialização e chamada de binário embutido
-- `src/kernel/mach_o.c` + `src/kernel/mach_o.h` — parser/loader Mach-O 64-bit
-- `src/kernel/syscall.c` — dispatcher XNU para `read`, `write`, `mmap`, `open`, `stat`, etc.
-- `src/kernel/bash_bin.c` — `/bin/bash` embutido como array C
-- `src/kernel/ls_bin.c` — `/bin/ls` embutido como array C
-- `src/kernel/memory.c` — suporte a mmap/munmap para binários de usuário
-- `src/kernel/pic.c` — PIC init corrigido para restaurar máscaras
-- `Makefile` — inclui binários embutidos no build
+## Visao Geral
 
-## Documentação de fases
-- `ARCHITECTURE_PHASE1.md` — Fase 1: boot, terminal e memória 64-bit
-- `ARCHITECTURE_PHASE2.md` — Fase 2: Mach-O loader e binários macOS embutidos
-- `ARCHITECTURE_PHASE3.md` — Fase 3: syscalls XNU e ambiente de execução
+O **OvsbMkM** e o nucleo do sistema operacional [ovsb.os](https://github.com/Gabicnt/Ovsb.OS).  
+Combina conceitos de microkernel (IPC Mach, servidores em userspace) com desempenho monolítico.
 
-## Arquitetura rápida
-1. GRUB carrega `build/kernel.elf`
-2. `boot64.asm` configura 64-bit, paginação e GDT
-3. `kmain()` inicializa VGA, teclado, IDT, PIC e memória
-4. O kernel chama `mach_o_load(bash_bin, bash_bin_len)`
-5. Segmentos Mach-O são copiados para memória em `slide = 0x2000000`
-6. A entrypoint do Mach-O é encontrada e executada
-7. Syscalls XNU são despachadas por `syscall_handler()`
+---
 
-## Limitações conhecidas
-- Loader Mach-O protótipo: não há relocations nem suporte a bibliotecas dinâmicas
-- Syscall layer parcial: muitas chamadas XNU ainda são stubs
-- Nada de memória de usuário isolada ou processos reais
-- O binário macOS depende de stubs de I/O e `tty`
-- Linker ainda emite warnings de pilha executável e RWX
+## Componentes
 
-## Como ajudar / próximos passos
-- Completar relocations Mach-O e `dyld` mínimo
-- Implementar `execve`, `fork`, `wait`, `readlink`, `open` real e VFS
-- Criar tabela de processos e espaço de endereço separado
-- Adicionar tratamento real de sinais e `gettimeofday`
+| Modulo | Descricao | Status |
+|--------|-----------|--------|
+| **Boot** | GRUB + Multiboot2, transicao 32 para 64-bit | OK |
+| **IDT/PIC** | Tabela de interrupcoes, controlador 8259 | OK |
+| **Memoria** | Alocador de paginas + heap (kmalloc/kfree) | OK |
+| **VGA** | Terminal 80x25 com scroll e cores | OK |
+| **PS/2** | Teclado com Shift, maiusculas, simbolos, ESC | OK |
+| **ATA** | Driver IDE/ATA PIO (leitura/escrita de setores) | OK |
+| **FAT32** | Criar, ler, escrever, deletar arquivos e listar diretorios | OK |
+| **Syscalls** | Stubs para chamadas de sistema BSD | Em breve |
+| **Mach-O** | Carregador de binarios Mach-O (prototipo) | Em breve |
 
-## Projeto em uma imagem
-```
-OvsbMkM/
-├── ARCHITECTURE_PHASE1.md
-├── ARCHITECTURE_PHASE2.md
-├── ARCHITECTURE_PHASE3.md
-├── EXPECTED_OUTPUT.md
-├── QUICKSTART.md
-├── TROUBLESHOOTING.md
-├── Makefile
-├── README.md
-├── src/
-│   ├── kernel/
-│   │   ├── bash_bin.c
-│   │   ├── kernel.c
-│   │   ├── mach_o.c
-│   │   ├── mach_o.h
-│   │   ├── syscall.c
-│   │   ├── memory.c
-│   │   ├── pic.c
-│   │   └── ...
-│   └── drivers/
-│       └── keyboard.c
-└── iso/
-```
+---
 
-> Atualizado para documentar as fases 1–3 e refletir o estado atual do código.
+## Build
+
+### Dependencias
+
+sudo apt install -y git nasm gcc binutils grub-pc-bin xorriso qemu-system-x86 dosfstools
+
+### Compilar e testar
+
+git clone https://github.com/Gabicnt/OvsbMkM.git
+cd OvsbMkM
+make clean && make iso
+qemu-system-x86_64 -cdrom OvsbMkM.iso -m 256M
+
+### Com disco virtual (FAT32)
+
+dd if=/dev/zero of=disk.img bs=1M count=128
+mkfs.vfat -F 32 disk.img
+qemu-system-x86_64 -cdrom OvsbMkM.iso -hda disk.img -m 256M
+
+---
+
+## Estrutura
+
+src/
+├── kernel/          # Nucleo do kernel
+│   ├── boot64.asm   # Bootloader Multiboot2
+│   ├── kernel.c     # kmain + shell parser
+│   ├── idt.c/asm    # Interrupt Descriptor Table
+│   ├── memory.c     # Gerenciador de memoria
+│   ├── pic.c        # Controlador de interrupcoes
+│   └── linker.ld    # Script de linkagem
+├── drivers/         # Drivers de hardware
+│   ├── keyboard.c   # Teclado PS/2
+│   └── ata.c        # Disco IDE/ATA
+└── fs/              # Sistemas de arquivos
+    └── fat32.c      # FAT32 driver
+
+---
+
+## Roadmap
+
+| Fase | Meta | Status |
+|------|------|--------|
+| **1** | Boot, terminal, teclado | OK |
+| **2** | Memoria, ATA, FAT32 | OK |
+| **3** | Diretorios (mkdir, cd), caminhos | Pendente |
+| **4** | Modo usuario, processos, syscalls reais | Pendente |
+| **5** | IPC Mach, servidores externos | Pendente |
+| **6** | Driver grafico, WindowServer | Pendente |
+
+---
+
+## Projeto relacionado
+
+**[Ovsb.OS](https://github.com/Gabicnt/Ovsb.OS)** — O sistema operacional completo, com shell, comandos e futura interface grafica.
+
+---
+
+<p align="center">
+  <sub>Feito com ☕ por <a href="https://github.com/Gabicnt">Gabicnt</a></sub>
+</p>
