@@ -9,3 +9,6 @@ build/
 temp.*
 *.log
 .DS_Store
+disk.img
+OvsbMkM.iso
+build/
