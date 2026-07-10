@@ -7,7 +7,7 @@ BUILD_DIR := build
 ISO_DIR := iso/boot
 ISO := OvsbMkM.iso
 
-CFLAGS := -ffreestanding -nostdlib -mno-red-zone -mno-mmx -mno-sse -mgeneral-regs-only -Wall -O0 -I src/kernel -I src/drivers -I .
+CFLAGS := -ffreestanding -nostdlib -mno-red-zone -mno-mmx -mno-sse -mgeneral-regs-only -Wall -O0 -I src/kernel -I src/drivers -I src/fs -I src/commands -I .
 NASM_FLAGS := -f elf64
 LDFLAGS := -T src/kernel/linker.ld
 
@@ -20,9 +20,16 @@ SRCS := \
     src/kernel/mach_o.c \
     src/kernel/smc.c \
     src/kernel/nvram.c \
-    src/kernel/test_macho.c
+    src/kernel/test_macho.c \
+    src/kernel/bash_bin.c \
+    src/kernel/dyld.c \
+    src/kernel/libsystem_bin.c \
+    src/kernel/ls_bin.c
 
 SRCS += src/drivers/keyboard.c
+SRCS += src/drivers/ata.c
+SRCS += src/fs/fat32.c
+SRCS += src/commands/shell_cmds.c
 SRCS += src/kernel/pic.c
 
 OBJS := $(patsubst %.c,$(BUILD_DIR)/%.o,$(SRCS))

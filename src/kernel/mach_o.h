@@ -8,6 +8,8 @@
 #define MH_MAGIC_64 0xFEEDFACF  // 64-bit
 #define MH_CIGAM    0xCEFAEDFE  // 32-bit (invertido)
 #define MH_CIGAM_64 0xCFFAEDFE  // 64-bit (invertido)
+#define FAT_MAGIC   0xCAFEBABE  // FAT binary
+#define FAT_CIGAM   0xBEBAFECA  // FAT binary inverted
 
 // Header 64-bit
 typedef struct {
@@ -29,6 +31,7 @@ typedef struct {
 
 // LC_SEGMENT_64
 #define LC_SEGMENT_64 0x19
+#define LC_MAIN       0x80000028
 
 typedef struct {
     uint32_t cmd;
@@ -36,13 +39,20 @@ typedef struct {
     char     segname[16];   // Nome do segmento
     uint64_t vmaddr;        // Endereço virtual
     uint64_t vmsize;        // Tamanho virtual
-    uint64_t fileoff;       // Offset no arquivo
-    uint64_t filesize;      // Tamanho no arquivo
-    uint32_t maxprot;       // Proteção máxima
-    uint32_t initprot;      // Proteção inicial
+    uint64_t fileoff;        // Offset no arquivo
+    uint64_t filesize;        // Tamanho no arquivo
+    uint32_t maxprot;        // Proteção máxima
+    uint32_t initprot;        // Proteção inicial
     uint32_t nsects;        // Número de seções
     uint32_t flags;         // Flags
 } __attribute__((packed)) segment_command_64_t;
+
+typedef struct {
+    uint32_t cmd;
+    uint32_t cmdsize;
+    uint64_t entryoff;
+    uint64_t stacksize;
+} __attribute__((packed)) entry_point_command_t;
 
 // Section 64
 typedef struct {
@@ -70,5 +80,7 @@ typedef struct {
     uint32_t count;         // Número de registradores
     // Seguido por: struct x86_thread_state64_t
 } __attribute__((packed)) unixthread_command_t;
+
+void *mach_o_load(void *data, unsigned int len);
 
 #endif

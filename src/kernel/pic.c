@@ -33,7 +33,7 @@ void pic_init(void) {
     outb(PIC1_DATA, 0x01);     // ICW4: modo 8086
     outb(PIC2_DATA, 0x01);
     
-    // Restaurar máscaras (todas as IRQs desabilitadas por enquanto)
-    outb(PIC1_DATA, 0xFF);
-    outb(PIC2_DATA, 0xFF);
+    // Restaurar máscaras
+    outb(PIC1_DATA, mask1);
+    outb(PIC2_DATA, mask2);
 }
