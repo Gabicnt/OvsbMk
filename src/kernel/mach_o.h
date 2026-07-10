@@ -71,4 +71,12 @@ typedef struct {
     // Seguido por: struct x86_thread_state64_t
 } __attribute__((packed)) unixthread_command_t;
 
+/*
+ * Carrega um binário Mach-O da memória.
+ * @data: ponteiro para o blob Mach-O
+ * @len:  tamanho do blob em bytes
+ * retorna: ponteiro para o entry point, ou 0 se falhar
+ */
+void *mach_o_load(void *data, unsigned int len);
+
 #endif

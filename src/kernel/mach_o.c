@@ -1,9 +1,15 @@
 #include "mach_o.h"
 
-// Ponto de entrada do programa carregado
+/* Ponto de entrada do binário carregado */
 typedef void (*entry_point_t)(void);
 
-void *load_mach_o(void *data) {
+/*
+ * Carrega binário Mach-O64 e retorna entry point.
+ * Corrigido: nome era "load_mach_o" (não batia com a chamada em kernel.c).
+ * Adicionado parâmetro len para compatibilidade com protótipo.
+ */
+void *mach_o_load(void *data, unsigned int len) {
+    (void)len; /* parâmetro reservado para futura validação de tamanho */
     mach_header_64_t *header = (mach_header_64_t *)data;
     
     // Verificar magic number
