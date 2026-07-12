@@ -7,7 +7,7 @@ BUILD_DIR := build
 ISO_DIR := iso/boot
 ISO := OvsbMkM.iso
 
-CFLAGS := -ffreestanding -nostdlib -mno-red-zone -mno-mmx -mno-sse -mgeneral-regs-only -Wall -O0 -I src/kernel -I src/drivers -I src/fs -I src/commands -I .
+CFLAGS := -ffreestanding -nostdlib -mno-red-zone -mno-mmx -mno-sse -mgeneral-regs-only -Wall -O0 -I src/kernel -I src/drivers -I src/fs -I src/commands -I src/lib/libgui -I src/apps/terminal -I .
 NASM_FLAGS := -f elf64
 LDFLAGS := -T src/kernel/linker.ld
 
@@ -15,22 +15,28 @@ SRCS := \
     src/kernel/kernel.c \
     src/kernel/syscall.c \
     src/kernel/idt.c \
-    src/kernel/test_idt.c \
     src/kernel/memory.c \
-    src/kernel/mach_o.c \
-    src/kernel/smc.c \
-    src/kernel/nvram.c \
-    src/kernel/test_macho.c \
-    src/kernel/bash_bin.c \
-    src/kernel/dyld.c \
-    src/kernel/libsystem_bin.c \
-    src/kernel/ls_bin.c
+    src/kernel/pic.c \
+    src/kernel/vga_text.c
 
 SRCS += src/drivers/keyboard.c
 SRCS += src/drivers/ata.c
 SRCS += src/fs/fat32.c
-SRCS += src/commands/shell_cmds.c
-SRCS += src/kernel/pic.c
+SRCS += src/lib/libgui/vesa.c
+SRCS += src/apps/terminal/terminal.c
+SRCS += src/commands/cmd_help.c
+SRCS += src/commands/cmd_clear.c
+SRCS += src/commands/cmd_echo.c
+SRCS += src/commands/cmd_about.c
+SRCS += src/commands/cmd_shutdown.c
+SRCS += src/commands/cmd_ls.c
+SRCS += src/commands/cmd_touch.c
+SRCS += src/commands/cmd_rm.c
+SRCS += src/commands/cmd_cat.c
+SRCS += src/commands/cmd_edit.c
+SRCS += src/commands/cmd_mkdir.c
+SRCS += src/commands/cmd_cd.c
+SRCS += src/commands/cmd_pwd.c
 
 OBJS := $(patsubst %.c,$(BUILD_DIR)/%.o,$(SRCS))
 
@@ -50,7 +56,6 @@ $(BUILD_DIR)/boot64.o: src/kernel/boot64.asm | $(BUILD_DIR)
 
 IDT_ASM := src/kernel/idt.asm
 IDT_OBJ := $(BUILD_DIR)/idt_asm.o
-
 $(IDT_OBJ): $(IDT_ASM) | $(BUILD_DIR)
 	$(NASM) -f elf64 -o $@ $<
 
@@ -64,7 +69,6 @@ KEYBOARD_OBJ := $(BUILD_DIR)/keyboard_asm.o
 $(KEYBOARD_OBJ): $(KEYBOARD_ASM) | $(BUILD_DIR)
 	$(NASM) -f elf64 -o $@ $<
 
-
 $(BUILD_DIR)/kernel.elf: $(BUILD_DIR)/boot64.o $(IDT_OBJ) $(SYSCALL_OBJ) $(KEYBOARD_OBJ) $(OBJS) src/kernel/linker.ld | $(BUILD_DIR)
 	$(CC) $(CFLAGS) -nostdlib -no-pie -o $@ $(BUILD_DIR)/boot64.o $(IDT_OBJ) $(SYSCALL_OBJ) $(KEYBOARD_OBJ) $(OBJS) -Wl,$(LDFLAGS)
 
@@ -74,7 +78,7 @@ iso: $(BUILD_DIR)/kernel.elf
 	$(GRUB) -o $(ISO) iso 2>/dev/null || true
 
 run: iso
-	$(QEMU) -cdrom $(ISO) -m 256M
+	$(QEMU) -boot d -cdrom $(ISO) -hda disk.img -m 256M
 
 clean:
 	rm -rf $(BUILD_DIR) $(ISO)

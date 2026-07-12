@@ -42,10 +42,23 @@ static const char sc_ascii_shift[] = {
     0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0
 };
 
+static char scancode_to_char(uint8_t sc) {
+    if (sc == 0x01) return 27;
+    if (sc == 0x4B) return 128;
+    if (sc == 0x4D) return 129;
+    if (sc == 0x48) return 130;
+    if (sc == 0x50) return 131;
+    if (sc == 0x47) return 132;
+    if (sc == 0x4F) return 133;
+    if (!(sc & 0x80) && sc < sizeof(sc_ascii_normal)) {
+        return shift_pressed ? sc_ascii_shift[sc] : sc_ascii_normal[sc];
+    }
+    return 0;
+}
+
 void keyboard_handler(void) {
     uint8_t sc = inb(PS2_DATA);
-    
-    // Verifica shift (pressionado ou solto)
+
     if (sc == 0x2A || sc == 0x36) {
         shift_pressed = 1;
         outb(0x20, 0x20);
@@ -56,15 +69,8 @@ void keyboard_handler(void) {
         outb(0x20, 0x20);
         return;
     }
-    
-    char c = 0;
-    if (!(sc & 0x80) && sc < sizeof(sc_ascii_normal)) {
-        c = shift_pressed ? sc_ascii_shift[sc] : sc_ascii_normal[sc];
-    }
-    
-    // Mapeamentos especiais
-    if (sc == 0x01) c = 27;  // ESC
-    
+
+    char c = scancode_to_char(sc);
     if (c) {
         int next = (kb_head + 1) % KB_BUFFER_SIZE;
         if (next != kb_tail) {
@@ -89,15 +95,10 @@ char keyboard_read(void) {
         }
         if (inb(0x64) & 0x01) {
             uint8_t sc = inb(0x60);
-            // Verifica shift
             if (sc == 0x2A || sc == 0x36) shift_pressed = 1;
             if (sc == 0xAA || sc == 0xB6) shift_pressed = 0;
-            
-            char c = 0;
-            if (!(sc & 0x80) && sc < sizeof(sc_ascii_normal)) {
-                c = shift_pressed ? sc_ascii_shift[sc] : sc_ascii_normal[sc];
-            }
-            if (sc == 0x01) c = 27;
+
+            char c = scancode_to_char(sc);
             if (c) return c;
         }
         for (volatile int i = 0; i < 1000; i++);

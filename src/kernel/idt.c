@@ -58,3 +58,8 @@ void idt_set_irq1(void) {
     idt_set_entry(IRQ1, (uint64_t)keyboard_irq_handler, 0x08, 
                   IDT_PRESENT | IDT_INT_GATE);
 }
+
+void idt_handler(void) {
+    // Handler genérico - apenas ignora a interrupção
+    // No futuro: tratar exceções reais
+}
