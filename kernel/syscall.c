@@ -1,84 +1,305 @@
 /* ♥ SYSCALL ~ Chamadas de sistema! "Pede pro kernel fazer~ hihi!"
- * 0 = exit, 1 = write, 2 = getpid, 3 = read, 4 = sbrk, 5 = time
- * Argumentos em RDI, RSI, RDX (igual System V ABI)~
- * Mesugaki mode: syscall desconhecida retorna -1 ~ *~ qui qui!~" */
+ * Agora com 24 syscalls! open, close, stat, lseek, mmap... tudo!
+ * Argumentos: RAX=numero, RDI=a1, RSI=a2, RDX=a3, R10=a4~
+ * Retorno vai em R15 (regs[14])~ Mesugaki mode ativado! kyun~ */
+
 #include "syscall.h"
 #include "process.h"
+#include "memory.h"
 #include "console.h"
 #include "serial.h"
 #include "pit.h"
 #include "../drivers/keyboard.h"
+#include "../fs/fat32.h"
+#include "../kernel/utils.h"
+#include "../lib/gui/vesa.h"
+
+/* Tabela de descritores de arquivo */
+#define MAX_FDS 16
+static struct {
+    int used;
+    char name[256];
+    uint32_t pos;
+} fds[MAX_FDS];
+
+#define O_RDONLY 0
+#define O_WRONLY 1
+#define O_RDWR   2
+#define O_CREAT  0x200
+
+struct timeval { uint64_t tv_sec; uint64_t tv_usec; };
+struct stat   { uint32_t st_size; };
 
 void syscall_init(void) {
+    for (int i = 0; i < MAX_FDS; i++) fds[i].used = 0;
+}
+
+void fds_cleanup(void) {
+    for (int i = 3; i < MAX_FDS; i++) fds[i].used = 0;
+}
+
+static int alloc_fd(void) {
+    for (int i = 3; i < MAX_FDS; i++) if (!fds[i].used) return i;
+    return -1;
+}
+
+static void close_fd(int fd) {
+    if (fd >= 3 && fd < MAX_FDS) fds[fd].used = 0;
+}
+
+static int str_equal(const char *a, const char *b) {
+    if (!a || !b) return 0;
+    while (*a && *b) { if (*a != *b) return 0; a++; b++; }
+    return *a == *b;
 }
 
 void syscall_handler(uint64_t *regs) {
     uint64_t num  = regs[0];
-    uint64_t arg1 = regs[4];
-    uint64_t arg2 = regs[3];
-    uint64_t arg3 = regs[2];
+    uint64_t a1 = regs[4];
+    uint64_t a2 = regs[3];
+    uint64_t a3 = regs[2];
+    uint64_t a4 = regs[5];
+    uint64_t ret = -1;
 
     switch (num) {
-    case 0:
-        process_exit_current((int)arg1);
+    case SYS_exit:
+        process_exit_current((int)a1);
+        for (;;) __asm__ volatile("hlt");
         break;
 
-    case 1: {
-        int fd = (int)arg1;
-        const char *buf = (const char *)arg2;
-        int count = (int)arg3;
-        if (fd == 1 || fd == 2) {
-            for (int i = 0; i < count; i++)
-                if (buf[i]) console_putchar(buf[i]);
+    case SYS_write: {
+        int fd = (int)a1;
+        const char *buf = (const char *)a2;
+        int count = (int)a3;
+        if (fd >= 3 && fd < MAX_FDS && fds[fd].used) {
+            int r = fat32_write_file(fds[fd].name, (const uint8_t *)buf, count);
+            ret = (r >= 0) ? count : -1;
+            break;
         }
-        regs[14] = count;
+        if (fd == 1 || fd == 2) {
+            for (int i = 0; i < count; i++) console_putchar(buf[i]);
+            ret = count;
+            break;
+        }
+        ret = -1;
         break;
     }
 
-    case 2:
-        regs[14] = process_current_pid();
+    case SYS_read: {
+        int fd = (int)a1;
+        char *buf = (char *)a2;
+        int count = (int)a3;
+        if (fd == 0 && buf && count > 0) {
+            int i;
+            for (i = 0; i < count; i++) {
+                while (!keyboard_avail()) {
+                    for (volatile int j = 0; j < 100; j++);
+                }
+                buf[i] = keyboard_read();
+                if (buf[i] == '\n') { i++; break; }
+                if (buf[i] == 3) break; /* ^C */
+            }
+            ret = i;
+            break;
+        }
+        if (fd >= 3 && fd < MAX_FDS && fds[fd].used) {
+            static uint8_t tmp[4096];
+            int r = fat32_read_file(fds[fd].name, tmp, 4096);
+            if (r < 0) { ret = -1; break; }
+            int off = fds[fd].pos;
+            int n = (count < r - off) ? count : (r - off);
+            if (n < 0) { ret = 0; break; }
+            for (int i = 0; i < n; i++) buf[i] = tmp[off + i];
+            fds[fd].pos += n;
+            ret = n;
+            break;
+        }
+        ret = -1;
+        break;
+    }
+
+    case SYS_open: {
+        const char *path = (const char *)a1;
+        if (str_equal(path, "/dev/tty") || str_equal(path, "/dev/stdin")) {
+            ret = 0;
+            break;
+        }
+        if (str_equal(path, "/dev/stdout")) { ret = 1; break; }
+        if (str_equal(path, "/dev/stderr")) { ret = 2; break; }
+        int fd = alloc_fd();
+        if (fd < 0) { ret = -1; break; }
+        int i = 0;
+        while (path[i] && i < 255) { fds[fd].name[i] = path[i]; i++; }
+        fds[fd].name[i] = '\0';
+        fds[fd].pos = 0;
+        fds[fd].used = 1;
+        ret = fd;
+        break;
+    }
+
+    case SYS_close:
+        close_fd((int)a1);
+        ret = 0;
         break;
 
-    case 3: {
-        int fd = (int)arg1;
-        char *buf = (char *)arg2;
-        int count = (int)arg3;
-        if (fd == 0) {
-            int total = 0;
-            while (total < count) {
-                while (!keyboard_avail()) {
-                    for (volatile int i = 0; i < 100; i++);
-                }
-                buf[total++] = keyboard_read();
-                if (total < count && buf[total-1] != '\n' && buf[total-1] != 3)
-                    continue;
+    case SYS_access: {
+        const char *path = (const char *)a1;
+        if (str_equal(path, "/dev/tty") ||
+            str_equal(path, "/dev/stdin") ||
+            str_equal(path, "/dev/stdout") ||
+            str_equal(path, "/dev/stderr")) { ret = 0; break; }
+        ret = 0;
+        break;
+    }
+
+    case SYS_fstat: {
+        struct stat *st = (struct stat *)a2;
+        if (!st) { ret = -1; break; }
+        int fd = (int)a1;
+        if (fd >= 3 && fd < MAX_FDS && fds[fd].used) {
+            uint32_t size; uint8_t attr;
+            if (fat32_stat(fds[fd].name, &size, &attr, NULL, NULL) == 0) {
+                st->st_size = size; ret = 0; break;
+            }
+        }
+        if (fd >= 0 && fd <= 2) { st->st_size = 0; ret = 0; break; }
+        ret = -1;
+        break;
+    }
+
+    case SYS_lstat:
+    case SYS_stat: {
+        const char *path = (const char *)a1;
+        struct stat *st = (struct stat *)a2;
+        if (!path || !st) { ret = -1; break; }
+        uint32_t size; uint8_t attr;
+        if (fat32_stat(path, &size, &attr, NULL, NULL) == 0) {
+            st->st_size = size; ret = 0; break;
+        }
+        ret = -1;
+        break;
+    }
+
+    case SYS_lseek: {
+        int fd = (int)a1;
+        int off = (int)a2;
+        int whence = (int)a3;
+        if (fd < 3 || fd >= MAX_FDS || !fds[fd].used) { ret = -1; break; }
+        switch (whence) {
+            case 0: fds[fd].pos = off; break;
+            case 1: fds[fd].pos += off; break;
+            case 2: {
+                uint32_t size = 0;
+                uint8_t attr;
+                if (fat32_stat(fds[fd].name, &size, &attr, NULL, NULL) == 0)
+                    fds[fd].pos = size + off;
                 break;
             }
-            regs[14] = total;
-        } else {
-            regs[14] = -1;
+            default: ret = -1; break;
         }
+        ret = fds[fd].pos;
         break;
     }
 
-    case 4: {
-        /* void *sbrk(int increment) */
-        pcb_t *pcb = process_current();
-        if (!pcb) { regs[14] = -1; break; }
-        int64_t inc = (int64_t)(int)arg1;
-        uint64_t old = pcb->program_break;
-        pcb->program_break += inc;
-        regs[14] = old;
+    case SYS_unlink:
+        if (fat32_delete_file((const char *)a1) == 0) ret = 0;
+        break;
+
+    case SYS_mkdir2:
+        if (fat32_mkdir((const char *)a1) == 0) ret = 0;
+        break;
+
+    case SYS_rmdir2:
+        if (fat32_rmdir((const char *)a1) == 0) ret = 0;
+        break;
+
+    case SYS_mmap:
+        ret = (uint64_t)mmap_user((void *)a1, a2, (int)a3, (int)a4);
+        break;
+
+    case SYS_munmap:
+        ret = munmap_user((void *)a1, a2);
+        break;
+
+    case SYS_mprotect:
+        ret = 0;
+        break;
+
+    case SYS_kbhit:
+        ret = keyboard_avail();
+        break;
+
+    case SYS_getpid:
+        ret = process_current_pid();
+        break;
+
+    case SYS_getuid:
+    case SYS_geteuid:
+    case SYS_getgid:
+    case SYS_getegid:
+        ret = 0;
+        break;
+
+    case SYS_ioctl:
+        ret = 0;
+        break;
+
+    case SYS_sigaction:
+    case SYS_sigreturn:
+        ret = 0;
+        break;
+
+    case SYS_gettimeofday: {
+        struct timeval *tv = (struct timeval *)a1;
+        if (tv) { tv->tv_sec = timer_ticks / 100; tv->tv_usec = 0; }
+        ret = 0;
         break;
     }
 
-    case 5:
-        /* uint64_t time(void) */
-        regs[14] = timer_ticks;
+    /* ♥ Display API ~ mapeia framebuffer pro user space */
+    case SYS_disp_get_fb: {
+        extern int g_fb_active;
+        extern framebuffer_t g_fb;
+        if (!g_fb_active || g_fb.bpp != 32) { ret = -1; break; }
+        uint64_t user_fb_va = 0xFFFFFFFF80000000ULL;
+        uint64_t fb_size = (uint64_t)g_fb.pitch * g_fb.height;
+        fb_size = (fb_size + 0x1FFFFF) & ~0x1FFFFF;
+        pcb_t *cur = process_current();
+        int r = pml4_map_phys(cur->pml4, user_fb_va, g_fb.addr, fb_size, 1);
+        if (r < 0) { ret = -1; break; }
+        uint64_t *addr   = (uint64_t *)a1;
+        uint32_t *width  = (uint32_t *)a2;
+        uint32_t *height = (uint32_t *)a3;
+        uint32_t *pitch  = (uint32_t *)a4;
+        if (addr)   *addr   = user_fb_va;
+        if (width)  *width  = g_fb.width;
+        if (height) *height = g_fb.height;
+        if (pitch)  *pitch  = g_fb.pitch;
+        ret = 0;
         break;
+    }
+
+    case SYS_disp_flush: {
+        extern int g_fb_active;
+        extern framebuffer_t g_fb;
+        void *backbuffer = (void *)a1;
+        if (!g_fb_active || !backbuffer) break;
+        uint32_t *fb_phys = (uint32_t *)(uintptr_t)g_fb.addr;
+        size_t pixels = (size_t)g_fb.pitch * g_fb.height / 4;
+        __asm__ volatile (
+            "rep movsl"
+            : "+D"(fb_phys), "+S"(backbuffer), "+c"(pixels)
+            : : "memory"
+        );
+        ret = 0;
+        break;
+    }
 
     default:
-        regs[14] = -1;
+        console_printf("syscall %d desconhecida~ baka!\n", (unsigned)num);
+        ret = -1;
         break;
     }
+
+    regs[14] = ret;
 }
