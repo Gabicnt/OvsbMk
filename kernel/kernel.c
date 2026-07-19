@@ -15,6 +15,8 @@
 #include "../drivers/ata.h"
 #include "../drivers/mouse.h"
 #include "../drivers/keyboard.h"
+#include "../drivers/ata.h"
+#include "../fs/fat32.h"
 #include "../lib/gui/vesa.h"
 #include "../lib/wm/wm.h"
 #include "../lib/owt/owt.h"
@@ -52,6 +54,12 @@ void kmain(uint32_t magic, uint32_t mb_info) {
     serial_puts("[OvsbMkM] Iniciando~ kyun!\r\n");
     idt_init(); pic_init(); idt_set_irq1();
     keyboard_init(); memory_init();
+    ata_init();
+    if (fat32_init() == 0) {
+        console_write("FAT32: disco montado!\n");
+    } else {
+        console_write("FAT32: sem disco ou erro\n");
+    }
     __asm__ volatile("sti");
     pit_init();
 
