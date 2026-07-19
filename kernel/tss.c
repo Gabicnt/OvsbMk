@@ -90,3 +90,5 @@ void tss_set_rsp0(uint64_t rsp0) {
     tss_t *t = (tss_t *)tss;
     t->rsp0 = rsp0;
 }
+
+/* ♥ TSS ~ Task State Segment! ring 3 precisa de RSP0 pra syscall~ */
