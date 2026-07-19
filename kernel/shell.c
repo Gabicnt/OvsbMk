@@ -1,3 +1,5 @@
+
+/* ♥ SHELL ~ console interativo! comandos, exec, ls, cd~ tudo aqui! */
 #include "shell.h"
 #include "console.h"
 #include "memory.h"
