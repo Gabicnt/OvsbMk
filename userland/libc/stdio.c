@@ -18,3 +18,10 @@ void putchar(char c){write(1,&c,1);}
 void puts(const char*s){write(1,s,strlen(s));write(1,"\n",1);}
 char getchar(void){char c;read(0,&c,1);return c;}
 char *gets(char*buf){int i=0;while(1){char c=getchar();if(c=='\n')break;if(c=='\b'){if(i>0)i--;continue;}buf[i++]=c;}buf[i]=0;return buf;}
+FILE *fopen(const char*p,const char*m){(void)m;int f=open(p,0);if(f<0)return 0;static FILE x;x.fd=f;return &x;}
+int fclose(FILE*f){return close(f->fd);}
+int fread(void*b,int s,int c,FILE*f){int r=read(f->fd,b,s*c);if(r<=0)return 0;return r/s;}
+int fwrite(const void*b,int s,int c,FILE*f){int r=write(f->fd,b,s*c);if(r<=0)return 0;return r/s;}
+char *fgets(char*b,int n,FILE*f){int i=0;while(i<n-1){char c;if(read(f->fd,&c,1)<=0)break;b[i++]=c;if(c=='\n')break;}b[i]=0;return i>0?b:0;}
+int fputs(const char*s,FILE*f){return write(f->fd,s,strlen(s))>0?0:-1;}
+int fputc(int c,FILE*f){char ch=c;return write(f->fd,&ch,1)==1?c:-1;}
