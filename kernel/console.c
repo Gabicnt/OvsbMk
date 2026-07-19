@@ -145,3 +145,5 @@ void console_printf(const char *fmt, ...) {
     va_end(args);
     console_write(buf);
 }
+
+/* ♥ console.c ~ arquivo fofinho do OvsbMkM! kyun~ <3 */

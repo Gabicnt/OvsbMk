@@ -6,3 +6,5 @@ void tss_init(void);
 void tss_set_rsp0(uint64_t rsp0);
 
 #endif
+
+/* ♥ tss.h ~ arquivo fofinho do OvsbMkM! kyun~ <3 */

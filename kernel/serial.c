@@ -23,3 +23,5 @@ void serial_init(void) {
 static int serial_is_transmit_empty(void) { return inb(0x3F8 + 5) & 0x20; }
 void serial_putc(char c) { while (!serial_is_transmit_empty()); outb(0x3F8, c); }
 void serial_puts(const char *s) { while (*s) { if (*s == '\n') serial_putc('\r'); serial_putc(*s++); } }
+
+/* ♥ serial.c ~ arquivo fofinho do OvsbMkM! kyun~ <3 */

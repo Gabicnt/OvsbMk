@@ -92,3 +92,5 @@ void tss_set_rsp0(uint64_t rsp0) {
 }
 
 /* ♥ TSS ~ Task State Segment! ring 3 precisa de RSP0 pra syscall~ */
+
+/* ♥ tss.c ~ arquivo fofinho do OvsbMkM! kyun~ <3 */

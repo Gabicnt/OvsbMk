@@ -34,3 +34,5 @@ void idt_set_irq1(void);
 #define IRQ1  33
 
 #endif
+
+/* ♥ idt.h ~ arquivo fofinho do OvsbMkM! kyun~ <3 */

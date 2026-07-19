@@ -12,3 +12,5 @@ void console_set_fg(uint32_t color);
 void console_set_bg(uint32_t color);
 
 #endif
+
+/* ♥ console.h ~ arquivo fofinho do OvsbMkM! kyun~ <3 */

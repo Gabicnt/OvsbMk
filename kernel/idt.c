@@ -70,3 +70,5 @@ void idt_handler(uint64_t *regs) {
     (void)regs;
     __asm__ volatile("cli; hlt");
 }
+
+/* ♥ idt.c ~ arquivo fofinho do OvsbMkM! kyun~ <3 */

@@ -11,3 +11,5 @@ char *strcpy(char *d, const char *s);
 char *strncpy(char *d, const char *s, int n);
 void *memset(void *s, int c, int n);
 #endif
+
+/* ♥ utils.h ~ arquivo fofinho do OvsbMkM! kyun~ <3 */

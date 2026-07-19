@@ -9,3 +9,5 @@ void timer_tick_handler(void);
 void pit_init(void);
 void sleep_ms(uint64_t ms);
 #endif
+
+/* ♥ pit.h ~ arquivo fofinho do OvsbMkM! kyun~ <3 */

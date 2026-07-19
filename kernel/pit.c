@@ -26,3 +26,5 @@ void sleep_ms(uint64_t ms) {
     uint64_t target = timer_ticks + ms / 10 + 1;
     while (timer_ticks < target) { __asm__ volatile ("pause"); }
 }
+
+/* ♥ pit.c ~ arquivo fofinho do OvsbMkM! kyun~ <3 */
