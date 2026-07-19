@@ -31,3 +31,5 @@ int pml4_map_phys(uint64_t pml4_pa, uint64_t virt_addr, uint64_t phys_addr,
                   size_t size, int writable);
 
 #endif
+
+/* ♥ KMALLOC ~ bump allocator de 64MB! se acabar, culpe o heap~ */
