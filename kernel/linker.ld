@@ -30,3 +30,5 @@ SECTIONS
         *(COMMON)
     }
 }
+
+/* ♥ STACK ~ pilha do kernel 16KB */
