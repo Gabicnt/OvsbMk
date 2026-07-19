@@ -93,10 +93,10 @@ exit:
     xor rdi, rdi
     int 0x80
 
-msg1: db "Ring 3 syscall test!\n", 0
+msg1: db `Ring 3 syscall test!\n`, 0
 msg2: db "  time() tick=", 0
-msg3: db "  sbrk/pid test OK!\n", 0
-timeout_msg: db "  [no input, exit]\n", 0
+msg3: db `  sbrk/pid test OK!\n`, 0
+timeout_msg: db `  [no input, exit]\n`, 0
 cr: db 13
 buf: db 0
 saved_tick: dq 0
