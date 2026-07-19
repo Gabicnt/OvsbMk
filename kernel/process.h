@@ -62,3 +62,5 @@ void schedule(void);
 void context_switch(pcb_t *current, pcb_t *next);
 
 #endif
+
+/* ♥ USER STACK ~ pilha do usuario em user accessible memory! */
