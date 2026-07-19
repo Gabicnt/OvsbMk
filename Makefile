@@ -43,12 +43,16 @@ user_prog.rebuild: user_prog.asm
 	rm -f user_prog.bin
 	@echo "user_prog_bin.h atualizado!"
 
+userland:
+	$(MAKE) -C userland
+
 clean:
 	rm -f *.o kernel.elf OvsbMkM.iso user_prog.bin
 	rm -rf iso/boot/kernel.elf
+	$(MAKE) -C userland clean
 	@echo "Limpo!"
 
 run: OvsbMkM.iso
 	qemu-system-x86_64 -vga std -boot d -cdrom $< -m 256M -serial stdio
 
-.PHONY: all clean run user_prog.rebuild
+.PHONY: all clean run user_prog.rebuild userland
