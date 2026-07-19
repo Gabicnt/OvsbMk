@@ -83,3 +83,7 @@ void free(void *p) {
     if ((char*)prev + (int)(*prev & AMASK) == (char*)h) { *prev = (*prev & AMASK) + (*h & AMASK); NEXT(prev) = NEXT(h); }
     freep = prev;
 }
+void *calloc(int n, int size) { int t=n*size; void*p=malloc(t); if(p){char*cp=(char*)p; for(int i=0;i<t;i++)cp[i]=0;} return p; }
+void *realloc(void*p,int n){if(!p)return malloc(n);if(n<=0){free(p);return 0;}unsigned long*h=(unsigned long*)((char*)p-HDR_SZ);int old=(int)(*h&AMASK)-HDR_SZ;if(old>=n)return p;void*new=malloc(n);if(!new)return 0;char*sp=(char*)p;char*dp=(char*)new;int c=old<n?old:n;for(int i=0;i<c;i++)dp[i]=sp[i];free(p);return new;}
+void *mmap(void*a,int l,int p,int f){(void)a;(void)p;(void)f;int t=(l+4095)&~4095;return (void*)_syscall(197,0,t,3,0);}
+int munmap(void*a,int l){int t=(l+4095)&~4095;return (int)_syscall(73,(long)a,t,0,0);}
