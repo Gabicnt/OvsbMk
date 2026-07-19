@@ -36,3 +36,5 @@ $(BUILD)/%.macho: $(BUILD)/%.bin
 
 clean:
 	rm -f $(PROGS_ELF) $(PROGS_BIN) $(PROGS_MACHO)
+
+# ♥ Regra pra copiar pro disco FAT32 ~ mcopy -o -i ../../disk.img
