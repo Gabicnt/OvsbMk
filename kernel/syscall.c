@@ -58,7 +58,7 @@ void syscall_handler(uint64_t *regs) {
     uint64_t a1 = regs[4];
     uint64_t a2 = regs[3];
     uint64_t a3 = regs[2];
-    uint64_t a4 = regs[5];
+    uint64_t a4 = regs[1];
     uint64_t ret = -1;
 
     switch (num) {
