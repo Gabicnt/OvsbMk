@@ -52,3 +52,7 @@ Ring 3 test: digita `run`, programa echo loop até ESC.
 ---
 
 Feito c/ carinho (e preguiça) por Haruna Himekawa ~ kyun! ♥
+
+## Userland
+- `make userland` compila programas ring 3 em Mach-O
+- Use `exec NOME` no shell pra carregar do FAT32
