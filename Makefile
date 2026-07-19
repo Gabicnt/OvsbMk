@@ -5,9 +5,9 @@ CFLAGS := -ffreestanding -nostdlib -mno-red-zone -mno-mmx -mno-sse
 CFLAGS += -mgeneral-regs-only -m64 -O2 -Wall
 LDFLAGS := -nostdlib -no-pie -Wl,-nostdlib -T kernel/linker.ld
 
-VPATH := kernel:drivers:lib/gui:lib/owt:lib/wm
+VPATH := kernel:drivers:lib/gui:lib/owt:lib/wm:fs
 
-C_SRCS := $(notdir $(wildcard kernel/*.c drivers/*.c lib/gui/*.c lib/owt/*.c lib/wm/*.c))
+C_SRCS := $(notdir $(wildcard kernel/*.c drivers/*.c lib/gui/*.c lib/owt/*.c lib/wm/*.c fs/*.c))
 ASM_SRCS := boot64.o idt_asm.o keyboard_asm.o switch_asm.o
 OBJS := $(C_SRCS:.c=.o) $(ASM_SRCS)
 
@@ -26,7 +26,7 @@ switch_asm.o: switch.asm
 	nasm -f elf64 -o $@ $<
 
 %.o: %.c
-	$(CC) $(CFLAGS) -I. -Ikernel -Idrivers -Ilib/gui -Ilib/owt -Ilib/wm -c -o $@ $<
+	$(CC) $(CFLAGS) -I. -Ikernel -Idrivers -Ilib/gui -Ilib/owt -Ilib/wm -Ifs -c -o $@ $<
 
 kernel.elf: $(OBJS)
 	$(CC) $(CFLAGS) $(OBJS) -o $@ $(LDFLAGS)
