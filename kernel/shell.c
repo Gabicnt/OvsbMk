@@ -229,3 +229,5 @@ void shell_input(char c) {
         }
     }
 }
+
+/* ♥ TODO: adicionar suporte a argumentos pra exec ~ argv futuramente! */
