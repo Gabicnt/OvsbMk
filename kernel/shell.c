@@ -1,7 +1,10 @@
 #include "shell.h"
 #include "console.h"
 #include "memory.h"
+#include "mach_o.h"
+#include "process.h"
 #include "../lib/gui/vesa.h"
+#include "../fs/fat32.h"
 #include <stdint.h>
 
 static inline void outb(uint16_t port, uint8_t val) {
@@ -30,7 +33,10 @@ static void cmd_help(void) {
     console_write("  echo <texto>          Imprime o texto\n");
     console_write("  info                  Info do sistema (VESA, heap)\n");
     console_write("  hexdump <addr>        Exibe 64 bytes do endereco\n");
-    console_write("  run                   Executa programa ring 3\n");
+    console_write("  run                   Executa programa ring 3 (embutido)\n");
+    console_write("  exec <arquivo>        Carrega e executa Mach-O do FAT32\n");
+    console_write("  ls                    Lista diretorio FAT32\n");
+    console_write("  cd <dir>              Muda diretorio FAT32\n");
     console_write("  owt                   Demo do OWT (widget toolkit)\n");
     console_write("  reboot                Reinicia o sistema\n");
 }
@@ -87,6 +93,76 @@ static void cmd_run(void) {
     user_prog_launch();
 }
 
+#define EXEC_USER_STACK_SIZE 65536
+
+static void cmd_exec(const char *args) {
+    if (!args || !args[0]) {
+        console_write("uso: exec <arquivo>\n");
+        return;
+    }
+    uint32_t fsize;
+    uint8_t attr;
+    if (fat32_stat(args, &fsize, &attr, 0, 0) < 0) {
+        console_write("exec: arquivo nao encontrado\n");
+        return;
+    }
+    if (fsize < 32) {
+        console_write("exec: arquivo muito pequeno\n");
+        return;
+    }
+    uint8_t *buf = kmalloc(fsize + 1);
+    if (!buf) {
+        console_write("exec: sem memoria\n");
+        return;
+    }
+    if (fat32_read_file(args, buf, fsize) < 0) {
+        console_write("exec: erro de leitura\n");
+        kfree(buf);
+        return;
+    }
+    console_printf("exec: carregando %s (%d bytes)\n", args, (unsigned)fsize);
+    void *entry = mach_o_load(buf, fsize);
+    if (!entry) {
+        console_write("exec: formato Mach-O invalido\n");
+        kfree(buf);
+        return;
+    }
+    void *ustack = kmalloc(EXEC_USER_STACK_SIZE);
+    if (!ustack) {
+        console_write("exec: sem memoria para pilha\n");
+        kfree(buf);
+        return;
+    }
+    int pid = process_create_user(args, entry, ustack, EXEC_USER_STACK_SIZE);
+    if (pid < 0) {
+        console_write("exec: erro ao criar processo\n");
+        kfree(buf);
+        kfree(ustack);
+        return;
+    }
+    kfree(buf);
+    console_printf("exec: PID %d rodando\n", pid);
+    process_switch_to(pid);
+    kfree(ustack);
+    console_write("exec: processo encerrou\n");
+}
+
+static void cmd_ls(void) {
+    fat32_list_dir();
+}
+
+static void cmd_cd(const char *args) {
+    if (!args || !args[0]) {
+        fat32_change_dir("..");
+        return;
+    }
+    fat32_change_dir(args);
+    char cwd[256];
+    fat32_get_cwd_name(cwd, 256);
+    console_write(cwd);
+    console_write("\n");
+}
+
 static void cmd_reboot(void) {
     console_write("Reiniciando...\n");
     outb(0x64, 0xFE);
@@ -108,6 +184,9 @@ static void execute(const char *cmd) {
     else if (strieq(cmd, "info", 4) && cmd_len == 4) cmd_info();
     else if (strieq(cmd, "hexdump", 7) && cmd_len == 7) cmd_hexdump(args);
     else if (strieq(cmd, "run", 3) && cmd_len == 3) cmd_run();
+    else if (strieq(cmd, "exec", 4) && cmd_len == 4) cmd_exec(args);
+    else if (strieq(cmd, "ls", 2) && cmd_len == 2) cmd_ls();
+    else if (strieq(cmd, "cd", 2) && cmd_len == 2) cmd_cd(args);
     else if (strieq(cmd, "owt", 3) && cmd_len == 3) { owt_demo(); console_write("OWT ok\n"); }
     else if (strieq(cmd, "reboot", 6) && cmd_len == 6) cmd_reboot();
     else {
