@@ -1,0 +1,6 @@
+*.o
+*.bin
+kernel.elf
+OvsbMkM.iso
+.tmp*
+
