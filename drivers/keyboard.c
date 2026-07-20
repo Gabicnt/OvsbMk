@@ -1,3 +1,4 @@
+/* ♥ KEYBOARD ~ driver de teclado! digita que eu leio~ */
 /* ♥ KEYBOARD - Driver de Teclado PS/2 ~ "Aperte qualquer tecla~"
  * Dica: scancodes set 1 traduzidos pra ASCII direto~
  * Se apertar e não aparecer nada, é porque o buffer encheu~ kyun! */
