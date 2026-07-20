@@ -1,7 +1,8 @@
-/* ♥ SLUB ~ Caches 16-2048 bytes! "Slab freelist, devolve pagina ao buddy~"
- * slab_t com magic 0x534C4142, freelist intra-pagina, auto-free quando vazio
- * 8 caches: 16, 32, 64, 128, 256, 512, 1024, 2048 ~ tamanhos otimizados!
- * hihi~ alocacao de objetos pequenos nunca foi tao rapida! >_< */
+/* ♥ KMALLOC ~ Roteamento inteligente! "<2048 pro SLUB, >=2048 pro buddy~"
+ * kmalloc decide automaticamente: objetos pequenos nos caches, grandes em paginas
+ * size < 16 arredonda pra 16 ~ nunca retorna ponteiro nulo por tamanho pequeno!
+ * rapido e eficiente, do jeito que voce gosta~ moe moe kyuun! */
+
 
 
 #include "memory.h"
