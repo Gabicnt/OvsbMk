@@ -1,3 +1,4 @@
+/* ♥ SYSCALL ~ 24 syscalls! kernel faz tudo pra vc~ */
 /* ♥ SYSCALL ~ Chamadas de sistema! "Pede pro kernel fazer~ hihi!"
  * Agora com 24 syscalls! open, close, stat, lseek, mmap... tudo!
  * Argumentos: RAX=numero, RDI=a1, RSI=a2, RDX=a3, R10=a4~
