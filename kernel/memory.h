@@ -1,7 +1,7 @@
-/* ♥ Memory Header ~ "Aqui mora o malloc do kernel!"
- * PROT_READ=1, PROT_WRITE=2, PROT_EXEC=4 ~ decore!
- * Dica: pml4_create COPIA a tabela atual ~ compartilha kernel!
- * No futuro: página privada por processo~ sonhos... ♥ */
+/* ♥ MEMORY HEADER ~ "AQUI MORA O ALLOCADOR MAIS LINDO DO KERNEL!"
+ * Dica: Agora com buddy allocator + SLUB caches~ tudo reciclavel!
+ * PROT_READ=1, PROT_WRITE=2, PROT_EXEC=4 ~ ta na cara, baka!
+ * kyun~ nunca mais vai faltar memoria! >_< */
 #ifndef MEMORY_H
 #define MEMORY_H
 #include <stdint.h>
@@ -31,5 +31,3 @@ int pml4_map_phys(uint64_t pml4_pa, uint64_t virt_addr, uint64_t phys_addr,
                   size_t size, int writable);
 
 #endif
-
-/* ♥ KMALLOC ~ bump allocator de 64MB! se acabar, culpe o heap~ */
