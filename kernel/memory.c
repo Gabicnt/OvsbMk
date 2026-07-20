@@ -1,3 +1,4 @@
+/* ♥ MEMORY ~ gerenciamento de memoria! nao vaze, por favor~ */
 /* ♥ MEMORY - Gerenciamento de memória ~ "Não vaze, por favor!"
  * Dica: kmalloc é bump allocator ~ simples e rápido!
  * Se acabar a memória, culpe o HEAP_SIZE (64MB)~
