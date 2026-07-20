@@ -1,3 +1,4 @@
+/* ♥ VESA ~ framebuffer graphics! pinta a tela toda~ */
 /* ♥ VESA - Driver VESA framebuffer ~ "Tela bonita em alta resolução!"
  * Dica: framebuffer_t tem addr, pitch, width, height ~
  * Se o addr for NULL, a tela vai ficar preta~ que triste~ */
