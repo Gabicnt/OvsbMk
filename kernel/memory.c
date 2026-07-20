@@ -1,7 +1,8 @@
-/* ♥ BUDDY ~ Allocador com ordens 0-14! "Split e coalesce, que fofo~"
- * frame metadata: frames[] um byte por pagina, bit7=alloc bit6=user bits0-5=order
- * freelist duplamente encadeada por order ~ free_area[0..14]
- * lock atomico pra proteger operacoes ~ seguranca em primeiro lugar! kyun~ */
+/* ♥ SLUB ~ Caches 16-2048 bytes! "Slab freelist, devolve pagina ao buddy~"
+ * slab_t com magic 0x534C4142, freelist intra-pagina, auto-free quando vazio
+ * 8 caches: 16, 32, 64, 128, 256, 512, 1024, 2048 ~ tamanhos otimizados!
+ * hihi~ alocacao de objetos pequenos nunca foi tao rapida! >_< */
+
 
 #include "memory.h"
 #include <stdint.h>
