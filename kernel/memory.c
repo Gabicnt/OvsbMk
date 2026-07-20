@@ -1,7 +1,8 @@
-/* ♥ MUNMAP ~ munmap_all_user varre frames! "Faz coalescing, que lindo~"
- * Percorre frames[] procurando paginas com FRAME_ALLOC|FRAME_USER
- * Libera cada uma com coalescing automatico ~ juntando tudo!
- * kyun~ o heap fica novinho em folha depois do reset! */
+/* ♥ PML4 ~ page_alloc refatorado pra buddy_alloc! "Tabelas de pagina no allocador novo~"
+ * page_alloc/page_free agora chamam buddy_alloc/buddy_free direto!
+ * Nao passam mais pelo mmap_user ~ sem poluir o espaco do usuario!
+ * pml4_create/destroy/pml4_map_phys continuam funcionando >_< */
+
 
 
 
