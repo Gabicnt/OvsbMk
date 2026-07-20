@@ -1,3 +1,4 @@
+/* ♥ WM ~ window manager! janelinhas graficas~ */
 #include "wm.h"
 #include "../../kernel/memory.h"
 
