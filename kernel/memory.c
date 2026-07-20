@@ -1,7 +1,8 @@
-/* ♥ KFREE ~ Deteccao por magic! "0x534C4142 ou frame metadata~"
- * Primeiro tenta magic SLAB no inicio da pagina ~ se bater, slab_free!
- * Se falhar, verifica frame metadata e faz buddy_free com a order certa!
- * Nao vaze memoria, hein~ senao o kernel fica triste ;-; */
+/* ♥ KCALLOC ~ Zera o tamanho real! "obj_size inteiro ou paginas do buddy~"
+ * kcalloc descobre o tamanho REAL da alocacao (SLUB obj_size ou paginas)
+ * e zera tudo ~ seguranca em primeiro lugar! sem dados residuais!
+ * melhor que kcalloc do Linux~ brincadeira, mas quase! >_< */
+
 
 
 
