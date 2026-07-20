@@ -1,3 +1,4 @@
+/* ♥ MACH-O ~ loader de binarios 64-bit! feedface magic~ */
 /* ♥ MACH-O LOADER ~ "Carrega binario Mach-O 64-bit na memoria!"
  * Dica: Le o header, itera pelos load commands, copia segmentos~
  * Aplica slide em 0x2000000 pra nao conflitar com o kernel~
