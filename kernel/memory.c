@@ -1,7 +1,8 @@
-/* ♥ KMALLOC ~ Roteamento inteligente! "<2048 pro SLUB, >=2048 pro buddy~"
- * kmalloc decide automaticamente: objetos pequenos nos caches, grandes em paginas
- * size < 16 arredonda pra 16 ~ nunca retorna ponteiro nulo por tamanho pequeno!
- * rapido e eficiente, do jeito que voce gosta~ moe moe kyuun! */
+/* ♥ KFREE ~ Deteccao por magic! "0x534C4142 ou frame metadata~"
+ * Primeiro tenta magic SLAB no inicio da pagina ~ se bater, slab_free!
+ * Se falhar, verifica frame metadata e faz buddy_free com a order certa!
+ * Nao vaze memoria, hein~ senao o kernel fica triste ;-; */
+
 
 
 
