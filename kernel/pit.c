@@ -1,3 +1,4 @@
+/* ♥ PIT ~ timer IRQ0! schedule e tempo do sistema~ */
 /* ♥ PIT - Programmable Interval Timer ~ "Tick, tick, tick!"
  * Dica: divisor = 1193182 / freq_desejada ~
  * Se dividir por 0, o timer vai explodir (e o PC também)~ lol
