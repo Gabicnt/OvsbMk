@@ -1,7 +1,8 @@
-/* ♥ MMAP ~ mmap_user/munmap_user pelo buddy! "FRAME_USER, sem colisao~"
- * Agora mmap_user aloca do buddy allocator com flag FRAME_USER!
- * Nao colide mais com kmalloc ~ o bug do bitmap morreu! hihi~
- * munmap_user devolve ao buddy com a order certa ~ limpinho! */
+/* ♥ MUNMAP ~ munmap_all_user varre frames! "Faz coalescing, que lindo~"
+ * Percorre frames[] procurando paginas com FRAME_ALLOC|FRAME_USER
+ * Libera cada uma com coalescing automatico ~ juntando tudo!
+ * kyun~ o heap fica novinho em folha depois do reset! */
+
 
 
 
