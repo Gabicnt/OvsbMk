@@ -1,7 +1,8 @@
-/* ♥ KCALLOC ~ Zera o tamanho real! "obj_size inteiro ou paginas do buddy~"
- * kcalloc descobre o tamanho REAL da alocacao (SLUB obj_size ou paginas)
- * e zera tudo ~ seguranca em primeiro lugar! sem dados residuais!
- * melhor que kcalloc do Linux~ brincadeira, mas quase! >_< */
+/* ♥ MMAP ~ mmap_user/munmap_user pelo buddy! "FRAME_USER, sem colisao~"
+ * Agora mmap_user aloca do buddy allocator com flag FRAME_USER!
+ * Nao colide mais com kmalloc ~ o bug do bitmap morreu! hihi~
+ * munmap_user devolve ao buddy com a order certa ~ limpinho! */
+
 
 
 
