@@ -1,3 +1,4 @@
+/* ♥ SERIAL ~ saida serial COM1! debug sem monitor~ */
 /* ♥ SERIAL - COM1 Serial ~ "Comunicação serial? Que vintage~"
  * Dica: 0x3F8 é a porta padrão da COM1!
  * Se não funcionar, verifica se o QEMU tem -serial stdio~ kyun! */
