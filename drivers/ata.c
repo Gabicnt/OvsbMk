@@ -1,3 +1,4 @@
+/* ♥ ATA ~ driver de disco ATA! le e escreve setores~ */
 /* ♥ ATA - Driver ATA PIO ~ "Lê e escreve setores como uma diva!"
  * Dica: 0x1F0 é a porta base do controlador ATA primário~
  * Se o status ficar sempre ocupado, é porque o disco não existe~ baka! */
