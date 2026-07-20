@@ -1,7 +1,8 @@
-/* ♥ PML4 ~ page_alloc refatorado pra buddy_alloc! "Tabelas de pagina no allocador novo~"
- * page_alloc/page_free agora chamam buddy_alloc/buddy_free direto!
- * Nao passam mais pelo mmap_user ~ sem poluir o espaco do usuario!
- * pml4_create/destroy/pml4_map_phys continuam funcionando >_< */
+/* ♥ SPINLOCK ~ Lock atomico! "__sync_lock_test_and_set protege tudo~"
+ * mem_lock/mem_unlock com __sync_lock_test_and_set + pause
+ * Protege todas as operacoes do buddy allocator e SLUB!
+ * Single-core safe ~ se travar, culpe o scheduler! moe~ */
+
 
 
 
