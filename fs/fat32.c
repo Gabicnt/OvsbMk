@@ -1,3 +1,4 @@
+/* ♥ FAT32 ~ sistema de arquivos gordinho mas funcional! */
 /* ♥ FAT32 - Driver de sistema de arquivos ~ "Gordão mas eficiente!"
  * Dica: FAT32 = File Allocation Table 32 bits~
  * A Tabela FAT guarda a cadeia de clusters de cada arquivo~
