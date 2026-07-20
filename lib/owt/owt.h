@@ -13,3 +13,4 @@
 #include "owt_menu.h"
 #include "owt_dialog.h"
 #endif
+/* ♥ OWT ~ widget toolkit pro OvsbMkM! botoes, labels, janelas~ */
