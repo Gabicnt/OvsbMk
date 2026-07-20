@@ -1,3 +1,4 @@
+/* ♥ PROCESS ~ gerenciamento de processos lindo! */
 /* ♥ PROCESS ~ Gerenciamento de processos fofinho!
  * Agora com scheduler round-robin! PID 0 = idle, PID 1+ = processos!
  * Estados: EMPTY, READY, RUNNING, BLOCKED, ZOMBIE~
