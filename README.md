@@ -1,112 +1,58 @@
-<p align="center">
-  <img src="https://img.shields.io/badge/arch-x86__64-blue?style=for-the-badge&logo=intel">
-  <img src="https://img.shields.io/badge/version-0.2.0-green?style=for-the-badge">
-  <img src="https://img.shields.io/badge/license-MIT-orange?style=for-the-badge">
-  <img src="https://img.shields.io/badge/status-active-success?style=for-the-badge">
-</p>
+# OvsbMkM ♥
 
-<h1 align="center">⚙️ OvsbMkM</h1>
+Kernel x86-64 com ring 3, syscalls, VESA text console e OWT!
 
-<p align="center"><strong>Kernel hibrido 64-bit inspirado no XNU (Mach + BSD)</strong></p>
+## Oq tem?
 
-<p align="center">
-  <a href="#-componentes">Componentes</a> •
-  <a href="#-build">Build</a> •
-  <a href="#-estrutura">Estrutura</a> •
-  <a href="#-roadmap">Roadmap</a>
-</p>
+**Kernel core**
+- boot64 UEFI/BIOS via GRUB
+- IDT com syscall gate (int 0x80, DPL=3)
+- TSS pra ring 0 stack qdo ring 3 int
+- Process: PCB, context_switch (switch.asm), idle + user proc
+- 6 syscalls: exit, write, getpid, read, sbrk, time
+- Shell: help, clear, echo, info, hexdump, run, owt, reboot
 
----
+**Drivers**
+- VESA framebuffer 1280x720 32bpp
+- Console VESA 80x45 c/ scrollback
+- Teclado PS/2 (scancode set 1 → ASCII)
+- Serial debug, PIT 100Hz
 
-## 🧠 Visao Geral
+**OWT** (Ovsb Widget Toolkit)
+- Window, Label, Button, TextBox, StatusBar
+- ListView, ComboBox, Menu, Dialog
+- Tema escuro/claro, primitivas de desenho
 
-O **OvsbMkM** e o nucleo do sistema operacional [ovsb.os](https://github.com/Gabicnt/Ovsb.OS).  
-Combina conceitos de microkernel (IPC Mach, servidores em userspace) com desempenho monolítico (drivers e FS no kernel).
+**WM** (Window Manager)
+- Backbuffer pra desenhar sem flicker
+- flush pro framebuffer do video
 
-┌─────────────────────────────────────────┐
-│ Ovsb.OS (userspace) │
-│ ┌─────────┐ ┌──────────┐ ┌─────────┐ │
-│ │ Shell │ │ Editor │ │ GUI │ │
-│ └────┬────┘ └────┬─────┘ └────┬────┘ │
-│ │ │ │ │
-├───────┴───────────┴────────────┴────────┤
-│ OvsbMkM (kernel) │
-│ ┌──────┐ ┌──────┐ ┌──────┐ ┌───────┐ │
-│ │ IDT │ │ PIC │ │ ATA │ │ FAT32 │ │
-│ └──────┘ └──────┘ └──────┘ └───────┘ │
-│ ┌──────┐ ┌──────┐ ┌──────┐ ┌───────┐ │
-│ │ MM │ │ PS/2 │ │ VGA │ │ Sysc │ │
-│ └──────┘ └──────┘ └──────┘ └───────┘ │
-└─────────────────────────────────────────┘
-text
-
-
----
-
-## ✅ Componentes
-
-| Modulo | Descricao | Status |
-|--------|-----------|--------|
-| **Boot** | GRUB + Multiboot2, transicao 32→64-bit | ✅ |
-| **IDT/PIC** | Tabela de interrupcoes, controlador 8259 | ✅ |
-| **Memoria** | Alocador de paginas + heap (`kmalloc`/`kfree`) | ✅ |
-| **VGA** | Terminal 80×25 com scroll e cores | ✅ |
-| **PS/2** | Teclado com Shift, maiusculas, simbolos, ESC | ✅ |
-| **ATA** | Driver IDE/ATA PIO (leitura/escrita de setores) | ✅ |
-| **FAT32** | Criar, ler, escrever, deletar arquivos e listar diretorios | ✅ |
-| **Syscalls** | Stubs para chamadas de sistema BSD | 🟡 |
-| **Mach-O** | Carregador de binarios Mach-O (prototipo) | 🟡 |
-
----
-
-## 🔨 Build
-
-### Dependencias
+## Build
 
 ```bash
-sudo apt install -y git nasm gcc binutils grub-pc-bin xorriso qemu-system-x86 dosfstools
+make run    # sobe no QEMU
+make clean  # limpa tudo
+```
 
-Compilar e testar
-bash
+## Comandos do shell
 
-git clone https://github.com/Gabicnt/OvsbMkM.git
-cd OvsbMkM
-make clean && make iso
-qemu-system-x86_64 -cdrom OvsbMkM.iso -m 256M
+```
+help       Mostra ajuda
+clear      Limpa tela
+echo <t>   Imprime texto
+info       Info do sistema (VESA, heap)
+hexdump <a> Exibe 64 bytes do endereco
+run        Executa programa ring 3
+owt        Demo OWT (widget toolkit)
+reboot     Reinicia
+```
 
-Com disco virtual (FAT32)
-bash
+Ring 3 test: digita `run`, programa echo loop até ESC.
 
-dd if=/dev/zero of=disk.img bs=1M count=128
-mkfs.vfat -F 32 disk.img
-qemu-system-x86_64 -cdrom OvsbMkM.iso -hda disk.img -m 256M
+---
 
-📁 Estrutura
-text
+Feito c/ carinho (e preguiça) por Haruna Himekawa ~ kyun! ♥
 
-src/
-├── kernel/          # Nucleo do kernel
-│   ├── boot64.asm   # Bootloader Multiboot2
-│   ├── kernel.c     # kmain + shell parser
-│   ├── idt.c/asm    # Interrupt Descriptor Table
-│   ├── memory.c     # Gerenciador de memoria
-│   ├── pic.c        # Controlador de interrupcoes
-│   └── linker.ld    # Script de linkagem
-├── drivers/         # Drivers de hardware
-│   ├── keyboard.c   # Teclado PS/2
-│   └── ata.c        # Disco IDE/ATA
-└── fs/              # Sistemas de arquivos
-    └── fat32.c      # FAT32 driver
-
-🗺️ Roadmap
-Fase	Meta	Status
-1	Boot, terminal, teclado	✅
-2	Memoria, ATA, FAT32	✅
-3	Diretorios (mkdir, cd), caminhos	🔄
-4	Modo usuario, processos, syscalls reais	⬜
-5	IPC Mach, servidores externos	⬜
-6	Driver grafico, WindowServer	⬜
-🤝 Projeto relacionado
-
-Ovsb.OS — O sistema operacional completo, com shell, comandos e futura interface grafica.
-<p align="center"> <sub>Feito com ☕ por <a href="https://github.com/Gabicnt">Gabicnt</a></sub> </p> ```
+## Userland
+- `make userland` compila programas ring 3 em Mach-O
+- Use `exec NOME` no shell pra carregar do FAT32

@@ -1,84 +1,63 @@
+# ♥ Makefile OvsbMkM ~ Kernel console minimal!
 CC := gcc
 NASM := nasm
-GRUB := grub-mkrescue
-QEMU := qemu-system-x86_64
+CFLAGS := -ffreestanding -nostdlib -mno-red-zone -mno-mmx -mno-sse
+CFLAGS += -mgeneral-regs-only -m64 -O2 -Wall
+LDFLAGS := -nostdlib -no-pie -Wl,-nostdlib -T kernel/linker.ld
 
-BUILD_DIR := build
-ISO_DIR := iso/boot
-ISO := OvsbMkM.iso
+VPATH := kernel:drivers:lib/gui:lib/owt:lib/wm:fs
 
-CFLAGS := -ffreestanding -nostdlib -mno-red-zone -mno-mmx -mno-sse -mgeneral-regs-only -Wall -O0 -I src/kernel -I src/drivers -I src/fs -I src/commands -I src/lib/libgui -I src/apps/terminal -I .
-NASM_FLAGS := -f elf64
-LDFLAGS := -T src/kernel/linker.ld
+C_SRCS := $(notdir $(wildcard kernel/*.c drivers/*.c lib/gui/*.c lib/owt/*.c lib/wm/*.c fs/*.c))
+ASM_SRCS := boot64.o idt_asm.o keyboard_asm.o switch_asm.o
+OBJS := $(C_SRCS:.c=.o) $(ASM_SRCS)
 
-SRCS := \
-    src/kernel/kernel.c \
-    src/kernel/syscall.c \
-    src/kernel/idt.c \
-    src/kernel/memory.c \
-    src/kernel/pic.c \
-    src/kernel/vga_text.c
+all: OvsbMkM.iso
 
-SRCS += src/drivers/keyboard.c
-SRCS += src/drivers/ata.c
-SRCS += src/fs/fat32.c
-SRCS += src/lib/libgui/vesa.c
-SRCS += src/apps/terminal/terminal.c
-SRCS += src/commands/cmd_help.c
-SRCS += src/commands/cmd_clear.c
-SRCS += src/commands/cmd_echo.c
-SRCS += src/commands/cmd_about.c
-SRCS += src/commands/cmd_shutdown.c
-SRCS += src/commands/cmd_ls.c
-SRCS += src/commands/cmd_touch.c
-SRCS += src/commands/cmd_rm.c
-SRCS += src/commands/cmd_cat.c
-SRCS += src/commands/cmd_edit.c
-SRCS += src/commands/cmd_mkdir.c
-SRCS += src/commands/cmd_cd.c
-SRCS += src/commands/cmd_pwd.c
+boot64.o: boot64.asm
+	nasm -f elf64 -o $@ $<
 
-OBJS := $(patsubst %.c,$(BUILD_DIR)/%.o,$(SRCS))
+idt_asm.o: idt.asm
+	nasm -f elf64 -o $@ $<
 
-.PHONY: all iso run clean
+keyboard_asm.o: keyboard_asm.asm
+	nasm -f elf64 -o $@ $<
 
-all: $(BUILD_DIR)/kernel.elf
+switch_asm.o: switch.asm
+	nasm -f elf64 -o $@ $<
 
-$(BUILD_DIR):
-	mkdir -p $(BUILD_DIR)
+%.o: %.c
+	$(CC) $(CFLAGS) -I. -Ikernel -Idrivers -Ilib/gui -Ilib/owt -Ilib/wm -Ifs -c -o $@ $<
 
-$(BUILD_DIR)/%.o: %.c | $(BUILD_DIR)
-	mkdir -p $(dir $@)
-	$(CC) $(CFLAGS) -c $< -o $@
+kernel.elf: $(OBJS)
+	$(CC) $(CFLAGS) $(OBJS) -o $@ $(LDFLAGS)
 
-$(BUILD_DIR)/boot64.o: src/kernel/boot64.asm | $(BUILD_DIR)
-	$(NASM) $(NASM_FLAGS) -o $@ $<
+OvsbMkM.iso: kernel.elf
+	mkdir -p iso/boot
+	cp kernel.elf iso/boot/
+	grub-mkrescue -o $@ iso 2>/dev/null || true
+	@echo "OvsbMkM.iso gerada!"
 
-IDT_ASM := src/kernel/idt.asm
-IDT_OBJ := $(BUILD_DIR)/idt_asm.o
-$(IDT_OBJ): $(IDT_ASM) | $(BUILD_DIR)
-	$(NASM) -f elf64 -o $@ $<
+disk.img:
+	dd if=/dev/zero of=$@ bs=1M count=64
+	mkfs.fat -F 32 $@
+	@echo "disk.img criado!"
 
-SYSCALL_ASM := src/kernel/syscall_entry.asm
-SYSCALL_OBJ := $(BUILD_DIR)/syscall_entry.o
-$(SYSCALL_OBJ): $(SYSCALL_ASM) | $(BUILD_DIR)
-	$(NASM) -f elf64 -o $@ $<
+user_prog.rebuild: user_prog.asm
+	nasm -f bin -o user_prog.bin $<
+	python3 -c "import sys; data=open('user_prog.bin','rb').read(); print('const uint8_t _binary_user_prog_start[] = {'); [print('    '+','.join(f'0x{b:02x}' for b in data[i:i+16])+',') for i in range(0,len(data),16)]; print('};'); print(f'const int _binary_user_prog_size = {len(data)};')" > kernel/user_prog_bin.h
+	rm -f user_prog.bin
+	@echo "user_prog_bin.h atualizado!"
 
-KEYBOARD_ASM := src/drivers/keyboard_asm.asm
-KEYBOARD_OBJ := $(BUILD_DIR)/keyboard_asm.o
-$(KEYBOARD_OBJ): $(KEYBOARD_ASM) | $(BUILD_DIR)
-	$(NASM) -f elf64 -o $@ $<
-
-$(BUILD_DIR)/kernel.elf: $(BUILD_DIR)/boot64.o $(IDT_OBJ) $(SYSCALL_OBJ) $(KEYBOARD_OBJ) $(OBJS) src/kernel/linker.ld | $(BUILD_DIR)
-	$(CC) $(CFLAGS) -nostdlib -no-pie -o $@ $(BUILD_DIR)/boot64.o $(IDT_OBJ) $(SYSCALL_OBJ) $(KEYBOARD_OBJ) $(OBJS) -Wl,$(LDFLAGS)
-
-iso: $(BUILD_DIR)/kernel.elf
-	mkdir -p $(ISO_DIR)
-	cp $(BUILD_DIR)/kernel.elf $(ISO_DIR)/kernel.elf
-	$(GRUB) -o $(ISO) iso 2>/dev/null || true
-
-run: iso
-	$(QEMU) -boot d -cdrom $(ISO) -hda disk.img -m 256M
+userland:
+	$(MAKE) -C userland
 
 clean:
-	rm -rf $(BUILD_DIR) $(ISO)
+	rm -f *.o kernel.elf OvsbMkM.iso user_prog.bin
+	rm -rf iso/boot/kernel.elf
+	$(MAKE) -C userland clean
+	@echo "Limpo!"
+
+run: OvsbMkM.iso disk.img
+	qemu-system-x86_64 -vga std -boot d -cdrom OvsbMkM.iso -m 256M -serial stdio -enable-kvm -drive file=disk.img,format=raw,if=ide
+
+.PHONY: all clean run user_prog.rebuild userland
