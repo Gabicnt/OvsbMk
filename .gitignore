@@ -5,3 +5,8 @@ kernel.elf
 OvsbMkM.iso
 .tmp*
 
+disk.img
+*.bak
+*.bak[0-9]
+qemu.log
+mnt/
