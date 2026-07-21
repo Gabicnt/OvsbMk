@@ -76,15 +76,22 @@ void process_init(void) {
 
 static void setup_user_stack(pcb_t *pcb, void *entry, void *ustack, uint64_t ustack_size) {
     uint64_t *sp = (uint64_t *)pcb->kernel_rsp;
-    *--sp = 0x23;
-    *--sp = (uint64_t)ustack + ustack_size;
-    *--sp = 0x202;
-    *--sp = 0x1B;
-    *--sp = (uint64_t)entry;
-    *--sp = 0; *--sp = 0; *--sp = 0; *--sp = 0;
-    *--sp = 0; *--sp = 0; *--sp = 0; *--sp = 0;
-    *--sp = 0; *--sp = 0; *--sp = 0; *--sp = 0;
-    *--sp = 0; *--sp = 0;
+    /* Empilha na ordem: SS, RSP, RFLAGS, CS, RIP, depois 16 regs */
+    *--sp = 0x23;                          /* SS (user data) */
+    *--sp = (uint64_t)ustack + ustack_size; /* RSP (topo da pilha user) */
+    *--sp = 0x202;                          /* RFLAGS (IF=1) */
+    *--sp = 0x1B;                           /* CS (user code 64-bit) */
+    *--sp = (uint64_t)entry;                /* RIP (entry point) */
+    /* 16 registradores (pop na ordem: r15,r14,...,rbp,rbx,r11,...,rax) */
+    *--sp = 0; /* r15 */  *--sp = 0; /* r14 */
+    *--sp = 0; /* r13 */  *--sp = 0; /* r12 */
+    *--sp = 0; /* rbp */  *--sp = 0; /* rbx */
+    *--sp = 0; /* r11 */  *--sp = 0; /* r10 */
+    *--sp = 0; /* r9 */   *--sp = 0; /* r8 */
+    *--sp = 0; /* rdi */  *--sp = 0; /* rsi */
+    *--sp = 0; /* rdx */  *--sp = 0; /* rcx */
+    *--sp = 0; /* rax */
+    *--sp = 0; /* extra padding */
     pcb->kernel_rsp = (uint64_t)sp;
 }
 
@@ -191,11 +198,15 @@ void process_exit_current(int code) {
 
     proc_wake_parent(p->pid);
 
-    /* Volta pro idle */
-    current_pid = 0;
-    pcb_t *idle = &pcb_table[0];
-    tss_set_rsp0(idle->rsp0);
-    context_switch(p, idle);
+    /* Volta pro pai */
+    int parent = p->parent_pid;
+    if (parent < 0 || parent >= MAX_PROC) parent = 0;
+    if (pcb_table[parent].state == PROC_BLOCKED || pcb_table[parent].state == PROC_READY)
+        pcb_table[parent].state = PROC_READY;
+    current_pid = parent;
+    pcb_t *next = &pcb_table[parent];
+    tss_set_rsp0(next->rsp0);
+    context_switch(p, next);
 }
 
 /* ♥ proc_exit ~ API nova do TipOS! Exit com schedule */
@@ -258,7 +269,7 @@ int process_current_pid(void) {
 
 static int find_next_ready(void) {
     int start = current_pid;
-    for (int i = 1; i < MAX_PROC; i++) {
+    for (int i = 0; i < MAX_PROC; i++) {
         int idx = (start + i) % MAX_PROC;
         if (pcb_table[idx].state == PROC_READY)
             return idx;

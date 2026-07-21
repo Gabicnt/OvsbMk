@@ -37,6 +37,11 @@ OvsbMkM.iso: kernel.elf
 	grub-mkrescue -o $@ iso 2>/dev/null || true
 	@echo "OvsbMkM.iso gerada!"
 
+disk.img:
+	dd if=/dev/zero of=$@ bs=1M count=64
+	mkfs.fat -F 32 $@
+	@echo "disk.img criado!"
+
 user_prog.rebuild: user_prog.asm
 	nasm -f bin -o user_prog.bin $<
 	python3 -c "import sys; data=open('user_prog.bin','rb').read(); print('const uint8_t _binary_user_prog_start[] = {'); [print('    '+','.join(f'0x{b:02x}' for b in data[i:i+16])+',') for i in range(0,len(data),16)]; print('};'); print(f'const int _binary_user_prog_size = {len(data)};')" > kernel/user_prog_bin.h
@@ -52,7 +57,7 @@ clean:
 	$(MAKE) -C userland clean
 	@echo "Limpo!"
 
-run: OvsbMkM.iso
-	qemu-system-x86_64 -vga std -boot d -cdrom $< -m 256M -serial stdio
+run: OvsbMkM.iso disk.img
+	qemu-system-x86_64 -vga std -boot d -cdrom OvsbMkM.iso -m 256M -serial stdio -enable-kvm -drive file=disk.img,format=raw,if=ide
 
 .PHONY: all clean run user_prog.rebuild userland

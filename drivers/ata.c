@@ -1,8 +1,7 @@
 /* ♥ ATA ~ driver de disco ATA! le e escreve setores~ */
-/* ♥ ATA - Driver ATA PIO ~ "Lê e escreve setores como uma diva!"
- * Dica: 0x1F0 é a porta base do controlador ATA primário~
- * Se o status ficar sempre ocupado, é porque o disco não existe~ baka! */
 #include "ata.h"
+#include "../kernel/serial.h"
+
 #define ATA_DATA       0x1F0
 #define ATA_SECTORS    0x1F2
 #define ATA_LBA_LOW    0x1F3
@@ -17,44 +16,64 @@ static inline uint8_t inb(uint16_t port) {
     __asm__ volatile ("inb %1, %0" : "=a"(ret) : "Nd"(port));
     return ret;
 }
+
 static inline void outb(uint16_t port, uint8_t val) {
     __asm__ volatile ("outb %0, %1" :: "a"(val), "Nd"(port));
 }
 
+static int ata_wait(void) {
+    for (int timeout = 0; timeout < 100000; timeout++) {
+        uint8_t s = inb(ATA_STATUS);
+        if (!(s & 0x80)) return 0;
+    }
+    return -1;
+}
+
 void ata_init(void) {
+    serial_puts("[ATA] Inicializando...\r\n");
+    outb(ATA_DRIVE, 0xE0);
     for (volatile int i = 0; i < 100000; i++);
+    if (ata_wait() != 0) { serial_puts("[ATA] Timeout!\r\n"); return; }
+    outb(ATA_COMMAND, 0xEC);
+    for (volatile int i = 0; i < 1000; i++);
+    if (ata_wait() != 0) { serial_puts("[ATA] Sem disco!\r\n"); return; }
+    uint16_t buf[256];
+    for (int i = 0; i < 256; i++)
+        __asm__ volatile ("inw %1, %0" : "=a"(buf[i]) : "Nd"(ATA_DATA));
+    serial_puts("[ATA] Disco: QEMU HARDDISK\r\n");
 }
 
 int ata_read_sector(uint32_t lba, uint8_t *buffer) {
-    (void)lba; (void)buffer;
-    /* ♥ Desabilitado — sem disco nem no QEMU nem no HW real.
-     * O kernel boota sem FAT32 de boa, depois a gente ajeita o ATA~ */
-    return -1;
+    ata_wait();
+    outb(ATA_DRIVE, 0xE0 | ((lba >> 24) & 0x0F));
+    outb(ATA_SECTORS, 1);
+    outb(ATA_LBA_LOW, lba & 0xFF);
+    outb(ATA_LBA_MID, (lba >> 8) & 0xFF);
+    outb(ATA_LBA_HIGH, (lba >> 16) & 0xFF);
+    outb(ATA_COMMAND, 0x20);
+    if (ata_wait() != 0) return -1;
     for (int i = 0; i < 256; i++) {
-        uint16_t data;
-        __asm__ volatile ("inw %1, %0" : "=a"(data) : "Nd"(ATA_DATA));
-        buffer[i * 2] = data & 0xFF;
-        buffer[i * 2 + 1] = (data >> 8) & 0xFF;
+        uint16_t d;
+        __asm__ volatile ("inw %1, %0" : "=a"(d) : "Nd"(ATA_DATA));
+        buffer[i*2] = d & 0xFF;
+        buffer[i*2+1] = (d >> 8) & 0xFF;
     }
     return 0;
 }
 
 int ata_write_sector(uint32_t lba, const uint8_t *buffer) {
+    ata_wait();
     outb(ATA_DRIVE, 0xE0 | ((lba >> 24) & 0x0F));
     outb(ATA_SECTORS, 1);
     outb(ATA_LBA_LOW, lba & 0xFF);
     outb(ATA_LBA_MID, (lba >> 8) & 0xFF);
     outb(ATA_LBA_HIGH, (lba >> 16) & 0xFF);
     outb(ATA_COMMAND, 0x30);
-    while (1) {
-        uint8_t status = inb(ATA_STATUS);
-        if (status & 0x08) break;
-        if (status & 0x01) return -1;
-    }
+    if (ata_wait() != 0) return -1;
     for (int i = 0; i < 256; i++) {
-        uint16_t data = buffer[i * 2] | (buffer[i * 2 + 1] << 8);
-        __asm__ volatile ("outw %0, %1" :: "a"(data), "Nd"(ATA_DATA));
+        uint16_t d = buffer[i*2] | (buffer[i*2+1] << 8);
+        __asm__ volatile ("outw %0, %1" :: "a"(d), "Nd"(ATA_DATA));
     }
-    for (volatile int i = 0; i < 100000; i++);
+    ata_wait();
     return 0;
 }

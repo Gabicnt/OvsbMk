@@ -361,7 +361,7 @@ void pml4_destroy(uint64_t pml4_pa) {
 
 int pml4_map_phys(uint64_t pml4_pa, uint64_t virt_addr, uint64_t phys_addr,
                   size_t size, int writable) {
-    uint64_t entry_flags = 0x83;
+    uint64_t entry_flags = 0x87;  /* 0x83 | 0x04 (User) */
     if (writable) entry_flags |= 0x04;
     uint64_t *pml4 = (uint64_t *)(uintptr_t)pml4_pa;
     for (uint64_t offset = 0; offset < size; offset += 0x200000) {

@@ -190,6 +190,7 @@ void syscall_handler(uint64_t *regs) {
             case 0: fds[fd].pos = off; break;
             case 1: fds[fd].pos += off; break;
             case 2: {
+            serial_puts("[syscall] write chamado\r\n");
                 uint32_t size = 0;
                 uint8_t attr;
                 if (fat32_stat(fds[fd].name, &size, &attr, NULL, NULL) == 0)

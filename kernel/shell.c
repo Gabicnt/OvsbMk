@@ -149,6 +149,10 @@ static void cmd_exec(const char *args) {
     console_write("exec: processo encerrou\n");
 }
 
+static void cmd_desktop(void) {
+    cmd_exec("DESKTOP.BIN");
+}
+
 static void cmd_ls(void) {
     fat32_list_dir();
 }
@@ -189,6 +193,7 @@ static void execute(const char *cmd) {
     else if (strieq(cmd, "exec", 4) && cmd_len == 4) cmd_exec(args);
     else if (strieq(cmd, "ls", 2) && cmd_len == 2) cmd_ls();
     else if (strieq(cmd, "cd", 2) && cmd_len == 2) cmd_cd(args);
+        else if (strieq(cmd, "desktop", 7) && cmd_len == 7) cmd_desktop();
     else if (strieq(cmd, "owt", 3) && cmd_len == 3) { owt_demo(); console_write("OWT ok\n"); }
     else if (strieq(cmd, "reboot", 6) && cmd_len == 6) cmd_reboot();
     else {
