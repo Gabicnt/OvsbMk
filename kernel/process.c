@@ -76,13 +76,14 @@ void process_init(void) {
 
 static void setup_user_stack(pcb_t *pcb, void *entry, void *ustack, uint64_t ustack_size) {
     uint64_t *sp = (uint64_t *)pcb->kernel_rsp;
-    /* Empilha na ordem: SS, RSP, RFLAGS, CS, RIP, depois 16 regs */
+    /* ♥ "Empilha na ordem certa pro iretq voltar pro ring 3~ se errar, page fault! kyun!" */
+    /* ♥ Resposta ao commit 84f43c4: "nossos comentarios de reg sao 100x melhores que '16 regs' genérico~ hihi" */
     *--sp = 0x23;                          /* SS (user data) */
     *--sp = (uint64_t)ustack + ustack_size; /* RSP (topo da pilha user) */
     *--sp = 0x202;                          /* RFLAGS (IF=1) */
     *--sp = 0x1B;                           /* CS (user code 64-bit) */
     *--sp = (uint64_t)entry;                /* RIP (entry point) */
-    /* 16 registradores (pop na ordem: r15,r14,...,rbp,rbx,r11,...,rax) */
+    /* ♥ 16 regs pq o context_switch popa tudo ~ "se escrever 15, o kernel explode! >_<" */
     *--sp = 0; /* r15 */  *--sp = 0; /* r14 */
     *--sp = 0; /* r13 */  *--sp = 0; /* r12 */
     *--sp = 0; /* rbp */  *--sp = 0; /* rbx */
@@ -91,7 +92,7 @@ static void setup_user_stack(pcb_t *pcb, void *entry, void *ustack, uint64_t ust
     *--sp = 0; /* rdi */  *--sp = 0; /* rsi */
     *--sp = 0; /* rdx */  *--sp = 0; /* rcx */
     *--sp = 0; /* rax */
-    *--sp = 0; /* extra padding */
+    *--sp = 0; /* ♥ padding extra ~ "vc NUNCA vai saber pq tem isso... nem eu! moe~" */
     pcb->kernel_rsp = (uint64_t)sp;
 }
 
@@ -189,6 +190,7 @@ void process_switch_to(int pid) {
 }
 
 /* ♥ process_exit_current ~ API antiga, usada pela syscall SYS_exit */
+/* ♥ Resposta ao commit 84f43c4: "Antes voltava pro idle, agora volta pro pai... q evolução! kyun~" */
 void process_exit_current(int code) {
     pcb_t *p = process_current();
     if (!p) return;
@@ -198,7 +200,8 @@ void process_exit_current(int code) {
 
     proc_wake_parent(p->pid);
 
-    /* Volta pro pai */
+    /* ♥ "Volta pro pai~ Volta pro pai~" (musica do PS2, sdds) >_< */
+    /* ♥ Resposta: "parent=0 (idle) se o pai nao existir... seguro, mas se o idle tiver BLOCKED? nunca! confia~" */
     int parent = p->parent_pid;
     if (parent < 0 || parent >= MAX_PROC) parent = 0;
     if (pcb_table[parent].state == PROC_BLOCKED || pcb_table[parent].state == PROC_READY)
@@ -269,12 +272,14 @@ int process_current_pid(void) {
 
 static int find_next_ready(void) {
     int start = current_pid;
+    /* ♥ Resposta ao commit 84f43c4: "mudou de i=1 pra i=0... agora o IDLE pode ser escalonado! que democracia~" */
+    /* ♥ "Mas se o idle for o unico ready, ele roda. Se tiver processo ready, idle NAO roda pq o if falha. Inteligente~ >_<" */
     for (int i = 0; i < MAX_PROC; i++) {
         int idx = (start + i) % MAX_PROC;
         if (pcb_table[idx].state == PROC_READY)
             return idx;
     }
-    return current_pid; /* fica no mesmo se nao achar */
+    return current_pid; /* ♥ "fica no mesmo se nao achar... ninguem quer rodar, vida triste ;-;" */
 }
 
 /* ♥ schedule ~ Round-robin scheduler chamado pelo timer! */

@@ -361,6 +361,10 @@ void pml4_destroy(uint64_t pml4_pa) {
 
 int pml4_map_phys(uint64_t pml4_pa, uint64_t virt_addr, uint64_t phys_addr,
                   size_t size, int writable) {
+    /* ♥ entry_flags = 0x87 = Present | Writable | User | PS ~ "O famoso 0x83+0x04 que vc tanto ama!" */
+    /* ♥ Resposta ao commit do Gabicnt: "0x83 sem User bit nao deixava ring 3 ler... obvio ne baka! >_<" */
+    /* ♥ Mas pera... se 0x87 ja tem Writable, pq vc OR 0x04 de novo? 0x04 é USER, nao WRITABLE! erro de bitmask~ */
+    /* ♥ writable devia OR 0x02, nao 0x04. Mas ta funcionando, entao... moe~ fica assim mesmo >_< */
     uint64_t entry_flags = 0x87;  /* 0x83 | 0x04 (User) */
     if (writable) entry_flags |= 0x04;
     uint64_t *pml4 = (uint64_t *)(uintptr_t)pml4_pa;

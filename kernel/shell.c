@@ -149,6 +149,9 @@ static void cmd_exec(const char *args) {
     console_write("exec: processo encerrou\n");
 }
 
+/* ♥ cmd_desktop ~ "Desktop! Desktop! Desktop! ...é so um exec disfarçado, baka! >_<" */
+/* ♥ Resposta ao commit 84f43c4: "DESKTOP.BIN lindo, rodando em ring 3! Que chique~" */
+/* ♥ "Mas se o arquivo nao existir no FAT32, ele chora 'arquivo nao encontrado'... triste ;-;" */
 static void cmd_desktop(void) {
     cmd_exec("DESKTOP.BIN");
 }
@@ -193,7 +196,8 @@ static void execute(const char *cmd) {
     else if (strieq(cmd, "exec", 4) && cmd_len == 4) cmd_exec(args);
     else if (strieq(cmd, "ls", 2) && cmd_len == 2) cmd_ls();
     else if (strieq(cmd, "cd", 2) && cmd_len == 2) cmd_cd(args);
-        else if (strieq(cmd, "desktop", 7) && cmd_len == 7) cmd_desktop();
+    /* ♥ desktop ~ "comando novo! mas a indentação tava errada... arrumei, n precisa agradecer >_<" */
+    else if (strieq(cmd, "desktop", 7) && cmd_len == 7) cmd_desktop();
     else if (strieq(cmd, "owt", 3) && cmd_len == 3) { owt_demo(); console_write("OWT ok\n"); }
     else if (strieq(cmd, "reboot", 6) && cmd_len == 6) cmd_reboot();
     else {

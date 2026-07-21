@@ -190,6 +190,8 @@ void syscall_handler(uint64_t *regs) {
             case 0: fds[fd].pos = off; break;
             case 1: fds[fd].pos += off; break;
             case 2: {
+            /* ♥ Resposta ao commit 84f43c4: "serial_puts debug pq vc nao confia no seu proprio codigo... hihi~" */
+            /* ♥ "Print debug? Em pleno 2026? Usa um debugger, baka! >_< mas ta okay, deixa ai~ moe" */
             serial_puts("[syscall] write chamado\r\n");
                 uint32_t size = 0;
                 uint8_t attr;
