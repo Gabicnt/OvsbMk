@@ -39,7 +39,7 @@ OvsbMkM.iso: kernel.elf
 
 disk.img:
 	dd if=/dev/zero of=$@ bs=1M count=64
-	mkfs.fat -F 32 $@
+	/sbin/mkfs.fat -F 32 $@
 	@echo "disk.img criado!"
 
 user_prog.rebuild: user_prog.asm
